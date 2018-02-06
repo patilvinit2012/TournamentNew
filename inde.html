@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Tournament</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        ul.optn{
+            list-style:none;
+        }
+        ul.optn li{
+            padding: 2px;
+        }
+        #console{
+            background:black;
+            color: #55ff55;
+            font-family: monospace;
+        }
+        .rght{
+            position: absolute;
+            right: 0px;
+        }
+        #header {
+          padding: 3rem 4rem;
+        }
+        .body{
+            padding: 4rem;
+        }
+        .mTop5{
+            margin-top: 5px;
+        }
+        .fltRght{
+            float: right;
+        }
+    </style>
+</head>
+<body>
+    <div id="wrapper">        
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <div class="container">
+                <div class="row" id="header" style="height:2rem">
+                    <div class="col col-md-12 "> 
+                        <span class="lftAlgn" style="font-size:30px;">
+                            Tournament <a href="https://www.bootply.com/iKosQHSrNf">refer me</a>
+                        </span> 
+                        <span class="rghtAlgn">
+                            <input type="button" value="&#xf013;" class="fa fa-gear rght btn appSet">
+                        </span>
+                    </div>
+                </div>
+                <div id="content1" class="body" >
+                    <div class="row">
+                        <div class="col col-md-6 col-xs-12">
+                            <h2>Add Players</h2>
+                            <input type="text" id="player"/>
+                            <input type="button" id="addPlayer" class="btn btn-primary" value="Add">
+                        </div>
+                        <div class="col col-md-6 col-xs-12">
+                            <h2>Players</h2> 
+                            <i class="fa fa-window-maximize playerAcc"></i>
+                            <ul id="playerList" class="optn" >
+                            </ul>
+                        </div>
+                    </div>
+                </div>    
+                
+                <div class="row">
+                    <div class="col col-md-6">
+                        <input type="button" class="btn btn-success" id="genMatch" value="Create Matchups">
+                        <input type="button" class="btn btn-success" id="shuffle" value="Shuffle" onclick="javascript:shufflePlayers();">
+                    </div>
+                    <div class="col col-md-6">
+                        <div id="matchups">
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /#page-content-wrapper -->
+    </div>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <script>
+        const PLAYERS = 'PLAYERS';
+        const SETTINGS = 'SETTINGS';
+        var players = getAllPlayersFromLS();
+        players = players || [];
+        localStorage.setItem(PLAYERS,JSON.stringify(players));
+        
+        var settingsObj = getDataFromLS(SETTINGS) || {GROUPSIZE:4};
+        localStorage.setItem(SETTINGS,JSON.stringify(settingsObj));
+        var log = $('#console');
+        /*Initialization*/
+        
+        (function(){
+            $('#settings').hide();
+            $('#addPlayer').bind('click',function(){
+                var player = $('#player').val();
+                $('#player').val('');
+                addPlayer(player);
+                
+            });
+            $('#clearPlayers').bind('click',clearPlayers);
+            
+            $('#playerList').bind('click',function(e){
+                if(!$(e.target).hasClass('xBtn')){
+                    return;
+                }
+                var player = $(e.target).closest('li').attr('id');
+                removePlayer(player);
+            });
+            $('#player').keyup(function (e) {
+                if (e.keyCode === 13) {
+                   $('#addPlayer').trigger('click');
+                }
+            });
+            
+            populatePlayers();
+            
+            $('.appSet').bind('click',function(){
+                $('#settings').toggle();
+                $('#content1').toggle();
+            })
+            $('.playerAcc').bind('click',function(){
+                $('#playerList').slideToggle('fast');
+            }) 
+            
+            init();
+            
+            $('#genMatch').bind('click',genMatch);
+        })();
+        
+        function init(){
+            initSettings(settingsObj);
+        }
+        
+        function addPlayer(player){
+            addPlayerInLS(player);
+        }
+        function addPlayerInLS(player){
+            if(!player){
+                return;
+            }
+            var players = getAllPlayersFromLS();
+            var playerObj = {
+                'player': player,
+                };
+            players.push(playerObj);
+            localStorage.setItem(PLAYERS,JSON.stringify(players));
+            populatePlayers();
+        }
+        
+        function getAllPlayersFromLS(){
+            return (getDataFromLS(PLAYERS) || []);
+        }
+        function getDataFromLS(key){
+            return JSON.parse(localStorage.getItem(key));
+        }
+        function populatePlayers(){
+            var contnr = $('#playerList');
+            var c = getAllPlayersFromLS();
+            var liItems=``;
+            var btnX = `<input type="button" class="btn btn-danger xBtn btn-xs tiny" value="X">`;
+            c.forEach(function(playerObj){
+                var player = playerObj.player;
+                liItems = liItems.concat(`<li id="${player}"> ${btnX} ${player} </li>`);
+            });
+            contnr.html(liItems);
+        }
+        function clearPlayers(){
+            localStorage.clear();
+            populatePlayers();
+        }
+        
+        function removePlayer(player){
+            var players = getAllPlayersFromLS();
+            players = players.filter(o => o.player != player);
+            localStorage.setItem(PLAYERS,JSON.stringify(players));
+            populatePlayers();
+        }
+        
+        function getPlayerObj(c){
+            var cs = getAllPlayersFromLS();
+            return cs.filter(function(o){
+                return o.player == c;
+            })[0] || {};
+        }
+        
+        function initSettings(settingsObj){
+            $('#playerList').hide();
+        }
+        
+        function putDataInLS(strK,strV){
+            localStorage.setItem(strK,JSON.stringify(strV));
+        }
+        
+        function genMatch(){
+            $('#matchups').html('');
+            var players = getDataFromLS(PLAYERS);
+            console.log(players);
+            var opStr=``;
+            
+            var groupHtmlObj = document.createElement('div');
+            groupHtmlObj.classList.add('btn-group','mTop5');
+            
+            var playerHtmlObj = document.createElement('button');
+            playerHtmlObj.classList.add('btn','btn-default');
+            
+            var groupNo = 0;
+            var groupSize = getDataFromLS(SETTINGS).GROUPSIZE;
+            var grpObj;
+            players.forEach(function(playerObj,index){
+                var player = playerObj.player;
+                var groupSizeCountr = (index) % groupSize;
+                
+                if(groupSizeCountr == 0) {
+                    groupNo++;
+                    grpObj = groupHtmlObj.cloneNode();
+                    $('#matchups').append(`<h3>Team ${groupNo}</h3>`)
+                    $('#matchups').append(grpObj);
+                    $('#matchups').append('<br>');
+                }
+                
+                var playerOb = playerHtmlObj.cloneNode();
+                playerOb.appendChild(document.createTextNode(player));
+                grpObj.appendChild(playerOb);
+                
+                
+            });
+        }
+
+        function shufflePlayers(){
+            if (confirm('Are you sure ?')) {
+                var players = getAllPlayersFromLS();
+                localStorage.setItem(PLAYERS,JSON.stringify(players.shuffle()));
+            } 
+        }
+        
+        Array.prototype.shuffle = function() {
+            var input = this;
+
+            for (var i = input.length-1; i >=0; i--) {
+
+                var randomIndex = Math.floor(Math.random()*(i+1)); 
+                var itemAtIndex = input[randomIndex]; 
+
+                input[randomIndex] = input[i]; 
+                input[i] = itemAtIndex;
+            }
+            return input;
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    
+    </script>
+</body>
+</html>
